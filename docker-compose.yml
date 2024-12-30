@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  backend:
+    platform: linux/amd64 # Agrega esta línea
+    build:
+      context: ./test-sps-server  # Ruta al directorio del backend
+    container_name: node_backend
+    ports:
+      - "3001:3000"  # Exponer el puerto 3001 del contenedor al puerto 3001 del host
+    environment:
+      - DB_HOST=db
+      - DB_USER=sts
+      - DB_PASSWORD=sts2024 
+      - DB_NAME=users_db
+      - JWT_SECRET=xYNakDg8AiUItn5eDoq294i4A2UaXXep
+    depends_on:
+      - db  # Asegura que MySQL esté levantado antes de iniciar el backend
+    networks:
+      - app-network
+
+  db:
+    image: mysql
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: sts2024
+      MYSQL_DATABASE: users_db
+      MYSQL_USER: sts
+      MYSQL_PASSWORD: sts2024
+    volumes:
+      - mysql-data:/var/lib/mysql  # Persistir datos de la base de datos
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Montar el archivo de inicialización
+    ports:
+      - "3306:3306"  # Exponer el puerto 3306 del contenedor al host
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./test-sps-react  # Ruta al directorio del frontend
+    container_name: react_frontend
+    ports:
+      - "3000:3000"  # Exponer el puerto 3000 del contenedor al puerto 3000 del host
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
